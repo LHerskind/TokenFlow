@@ -2,7 +2,7 @@ http://tokenflow.xyz
 
 # Test transactions:
 
-*Swap Eth to ERC20 (WBTC). Huge motherfucker*
+*Swap Eth to ERC20 (WBTC).*
 0xc44e8bd76bec69ff305f0fcc3dccb2965970e145ffc083e0c27a22a06542f528
 
 *Swap eth to ERC20 (USDT). Small*
@@ -20,7 +20,7 @@ http://tokenflow.xyz
 *Swap ERC20 (REN) to eth*
 0x38722e725f3ad157fb14a204891158de987a89eca58406a0911a182552e938c9
 
-*Swap ERC20 (DAI) to ERC20 (BAC) with CHI burning* - Make it look nicer with the CHI
+*Swap ERC20 (DAI) to ERC20 (BAC) with CHI burning*
 0x77290eaad5271396a9610e0f852acabb8dae9a608f6236c6be1b3f1200f6dede
 
 *Swap ERC20 (USDT) to eth with CHI burning* 
