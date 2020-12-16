@@ -1,0 +1,19 @@
+body {
+    font-family: "Lato", "Helvetica", Helvetica, sans-serif;
+    background: #efefef;
+    color: #000000;
+    padding: 20px;
+    letter-spacing: 1px;
+  }
+  
+
+.node rect {
+  stroke: #333;
+  fill: #fff;
+}
+
+.edgePath path {
+  stroke: #333;
+  fill: #333;
+  stroke-width: 1.5px;
+}

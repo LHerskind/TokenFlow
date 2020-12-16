@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tokenflow</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.11.0/d3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre-d3/0.6.1/dagre-d3.js"></script>
+    <script src="/js/bignumber.js"></script>
+    <script src="/js/script.js"></script>
+
+    <div id="someButtons">
+      <p>
+        Disclaimer: Work-In-Progress. Tweet <a href="https://twitter.com/HerskindLasse">@HerskindLasse</a> with bugs. The order is deduced from logs and internal transfers, and not from a replay. Therefore the eth-transfers may not be in proper position. 
+      </p>
+      <label for="txhash">txhash</label>
+      <input type="text" id="txhash" name="txhash">
+      <button type="button" id="drawbutton">Draw flow</button> 
+    </div>
+    <br>
+
+    <script>
+      document.getElementById("drawbutton").addEventListener('click', startDrawing);
+
+      function startDrawing(){
+        let _txhash = document.getElementById("txhash").value;
+        if (_txhash.length != 66){
+            alert("Transaction hash length is invalid");
+            return;
+        }
+        let hostname = window.location.hostname;
+        
+        let _url = 'http://' + hostname + "/tx/" + _txhash
+        
+        window.location.href = _url;
+
+      }
+    </script>
+
+    <div id="myDiv"></div>
+    <div class="container">
+        <svg height="1080" width=1920><g></svg>
+    </div>
+  </body>
+</html>
