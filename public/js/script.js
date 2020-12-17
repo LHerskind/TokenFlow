@@ -26,7 +26,7 @@ async function getTransfers() {
 
 	if (_txhash.length != 66) {
 		console.log("i am smol");
-		return {"err": "Transaction hash length not matching"};
+		return { err: "Transaction hash length not matching" };
 	}
 
 	let _url = "http://" + hostname + "/transfers/" + _txhash;
@@ -131,15 +131,26 @@ function tokenName(address, tokens) {
 
 function drawMyShit(data, _valueOnLabels) {
 	// TODO: Idea, draw numbers, and then give a list of items on the side.
-	var g = new dagreD3.graphlib.Graph({ multigraph: true }).setGraph({});
+	var g = new dagreD3.graphlib.Graph({ multigraph: true }).setGraph({
+		rankdir: "LR",
+	});
 	console.log("Sender: ", data["sender"]);
 
 	data["nodes"].forEach((node) => {
 		if (node["name"] == data["sender"]) {
-			g.setNode(node["name"], { label: "Sender" });
-		} else {
+			//g.setNode(node["name"], { label: "Sender" });
+			let link = "https://etherscan.io/address/" + node["name"];
+			let name = "sender";
 			g.setNode(node["name"], {
-				label: cleanName(node["name"], data["tokens"]),
+				labelType: "html",
+				label: "<a href=" + link + ">" + name + "</a>",
+			});
+		} else {
+			let link = "https://etherscan.io/address/" + node["name"];
+			let name = cleanName(node["name"], data["tokens"]);
+			g.setNode(node["name"], {
+				labelType: "html",
+				label: "<a href=" + link + ">" + name + "</a>",
 			});
 		}
 	});
@@ -153,25 +164,23 @@ function drawMyShit(data, _valueOnLabels) {
 		let amount = getValue(edge["amount"], token, data["tokens"]);
 		let label;
 
-		if (type == "transfer") {
-			label =
-				" " +
-				i +
-				") " +
-				amount +
-				" " +
-				tokenName(token, data["tokens"]);
-		} else if (type == "ethtransfer") {
-			label =
-				" " +
-				i +
-				") " +
-				amount +
-				" " +
-				tokenName(token, data["tokens"]);
-		}
+		if (type == "transfer" || type == "ethtransfer") {
+			let link = "https://etherscan.io/address/" + token;
+			let name = tokenName(token, data["tokens"]);
 
-		g.setEdge(from, to, { label: label }, i);
+			label =
+				" " +
+				i +
+				") " +
+				amount +
+				" " +
+				tokenName(token, data["tokens"]);
+
+			g.setEdge(from, to, {
+				labelType: "html",
+				label: " " + i + ") " + amount + " <a href=" + link + ">" + name + "</a>",
+			}, i);
+		}
 	}
 
 	g.nodes().forEach(function (v) {
@@ -216,18 +225,18 @@ function drawMyShit(data, _valueOnLabels) {
 }
 
 getTransfers().then((tx) => {
-    if(tx["err"]){
-        alert(tx["err"]);
-        return;
-    }
+	if (tx["err"]) {
+		alert(tx["err"]);
+		return;
+	}
 
 	if (tx == null) {
 		return;
-    }
-    
+	}
+
 	console.log(tx);
 
-    getLinks(tx).then((data) => {
+	getLinks(tx).then((data) => {
 		console.log(data);
 		drawMyShit(data, true);
 	});
