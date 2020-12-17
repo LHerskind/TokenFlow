@@ -1,6 +1,5 @@
 const Web3 = require("web3");
 const fetch = require("node-fetch");
-//const fs = require("fs");
 
 var config = require("./config");
 
@@ -162,11 +161,7 @@ function getTransfer(log) {
 }
 
 async function getUsefulLogs(tx, initialEvent) {
-	// TODO: We need something for the deposit into WETH, or so it seems at least.
-	// https://etherscan.io/tx/0x66a4e5ec07761aedc13e9e70339c960c83a3d2eec00f933d4b1db04216ea10fa#home seems like a good example
-	// Looks like 1inch, deposit eth to weth, and then allow 0x72 to spend it. Therefore we newer transfer it.
-	// But I cannot follow how we can spend the following coins...
-	// Looks like the deposit goest directly to 0x72
+	// TODO: Maybe we should include approves :thinking:
 	let _logs = tx["logs"];
 	let events = [];
 
@@ -342,14 +337,13 @@ function getBefores(limits, ethsLen, ercLen) {
 }
 
 function getAfters(limits, ethsLen, ercLen) {
-	// TODO: Look at this again. Are we really doing it right? Should it not be reversed?
 	let afterKeys = Object.keys(limits["after"]);
 	afterKeys.sort();
 	afterKeys.reverse();
 	let afters = [];
 	let lastVal = ethsLen - 1;
 	afterKeys.forEach((key) => {
-		let indexValue = parseInt(limits["after"][key]); // Everything that is after must also be after, right?
+		let indexValue = parseInt(limits["after"][key]);
 		let count = 0;
 		for (let i = lastVal; i >= parseInt(key); i--) {
 			count++;
@@ -364,13 +358,8 @@ function getAfters(limits, ethsLen, ercLen) {
 }
 
 async function joinERCEthTransfers(_from, _eths, _ercs) {
-	// Could we try to use deposits and withdraw to make better guesses? on location :O
 	console.log("Total eth transfers: ", _eths.length);
-
-	// Make the nasties shit ever, yikes.
-
 	let preciseLocation = {};
-
 	let transferMatch = (a, b) => {
 		return (
 			a["to"] == b["to"] &&
@@ -451,7 +440,6 @@ async function joinERCEthTransfers(_from, _eths, _ercs) {
 	}
 
 	console.log("Limits: ", limits);
-	// Generate a before and after depending on the limits only!
 
 	let afters = getAfters(limits, _eths.length, _ercs.length);
 	let befores = getBefores(limits, _eths.length, _ercs.length);

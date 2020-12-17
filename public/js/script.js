@@ -13,7 +13,7 @@ function getValue(value, coin, tokens) {
 	let x = BigNumber(value);
 	let temp = x.div(decimals);
 	temp = BigNumber(temp.toFixed(3));
-	return temp.toNumber(); // toPrecision(4);
+	return temp.toNumber();
 }
 
 async function getTransfers() {
@@ -32,14 +32,10 @@ async function getTransfers() {
 	let _url = "http://" + hostname + "/transfers/" + _txhash;
 	console.log(_url);
 
-	//let txhash = '0x742a16adc9e28519243d593958c660c9c62d396877aab00de654f6a5320d437b';
-
 	let response = await fetch(_url);
 	let data = await response.json();
 	return data;
 }
-
-// We can read the first and last message to figure out what 1inch address it is for deposits.
 
 async function getLinks(_data) {
 	let transfers = _data["transfers"];
@@ -129,7 +125,7 @@ function tokenName(address, tokens) {
 	return address;
 }
 
-function drawMyShit(data, _valueOnLabels) {
+function drawFigure(data, _valueOnLabels) {
 	// TODO: Idea, draw numbers, and then give a list of items on the side.
 	var g = new dagreD3.graphlib.Graph({ multigraph: true }).setGraph({
 		rankdir: "LR",
@@ -238,6 +234,6 @@ getTransfers().then((tx) => {
 
 	getLinks(tx).then((data) => {
 		console.log(data);
-		drawMyShit(data, true);
+		drawFigure(data, true);
 	});
 });
