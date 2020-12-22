@@ -29,7 +29,7 @@ async function getTransfers() {
 		return { err: "Transaction hash length not matching" };
 	}
 
-	let _url = "http://" + hostname + "/transfers/" + _txhash;
+	let _url = "https://" + hostname + "/transfers/" + _txhash;
 	console.log(_url);
 
 	let response = await fetch(_url);
