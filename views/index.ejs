@@ -19,6 +19,9 @@
       <label for="txhash">txhash</label>
       <input type="text" id="txhash" name="txhash">
       <button type="button" id="drawbutton">Draw flow</button> 
+
+      <label for="approvals">show approvals</label>
+      <input type="checkbox" id="approvals" name="approvals">
     </div>
     <br>
 
@@ -36,13 +39,18 @@
         let _url = 'https://' + hostname + "/tx/" + _txhash
         
         window.location.href = _url;
-
       }
-    </script>
 
-    <div id="myDiv"></div>
-    <div class="container">
-        <svg height="1080" width=1920><g></svg>
-    </div>
+      document.getElementById("approvals").addEventListener('click', reDraw);
+
+      function reDraw(){
+        if (lastData == undefined || lastData == null){
+          return;
+        }
+        pleaseDraw();
+      }
+
+    </script>
+    <svg style="min-height: 600px; min-width: 95vw;"><g></svg>
   </body>
 </html>

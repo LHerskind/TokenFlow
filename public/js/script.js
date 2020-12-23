@@ -45,6 +45,8 @@ async function getLinks(_data) {
 
 	let edges = [];
 
+	// Should we add the type of node, such that we can easily remove the ones only used in approvals
+
 	for (let i = 0; i < transfers.length; i++) {
 		let transfer = transfers[i];
 		let transferAmount = transfer["amount"];
@@ -60,6 +62,13 @@ async function getLinks(_data) {
 			type: type,
 		});
 
+		[from, to].forEach((addr) => {
+			let temp = {name: addr, type: type};
+			if (nodeLabelMap[addr] == undefined || nodeLabelMap[addr]["type"] == 'approval'){
+				nodeLabelMap[addr] = temp;
+			}
+		});
+
 		if (nodeLabelMap[from] == undefined) {
 			nodeLabels.push({ name: from });
 			nodeLabelMap[from] = true;
@@ -69,6 +78,11 @@ async function getLinks(_data) {
 			nodeLabelMap[to] = true;
 		}
 	}
+
+	nodeLabels = [];
+	Object.keys(nodeLabelMap).forEach((addr) => {
+		nodeLabels.push(nodeLabelMap[addr]);
+	});
 
 	let data = {
 		edges: edges,
@@ -125,7 +139,7 @@ function tokenName(address, tokens) {
 	return address;
 }
 
-function drawFigure(data, _valueOnLabels) {
+function drawFigure(data, _valueOnLabels, _approvals) {
 	// TODO: Idea, draw numbers, and then give a list of items on the side.
 	var g = new dagreD3.graphlib.Graph({ multigraph: true }).setGraph({
 		rankdir: "LR",
@@ -133,6 +147,9 @@ function drawFigure(data, _valueOnLabels) {
 	console.log("Sender: ", data["sender"]);
 
 	data["nodes"].forEach((node) => {
+		if (!_approvals && node["type"] == 'approval'){
+			return;
+		}
 		if (node["name"] == data["sender"]) {
 			//g.setNode(node["name"], { label: "Sender" });
 			let link = "https://etherscan.io/address/" + node["name"];
@@ -151,6 +168,7 @@ function drawFigure(data, _valueOnLabels) {
 		}
 	});
 
+	let count = 0;
 	for (let i = 0; i < data["edges"].length; i++) {
 		let edge = data["edges"][i];
 		let from = edge["source"];
@@ -158,24 +176,55 @@ function drawFigure(data, _valueOnLabels) {
 		let token = edge["token"];
 		let type = edge["type"];
 		let amount = getValue(edge["amount"], token, data["tokens"]);
-		let label;
 
 		if (type == "transfer" || type == "ethtransfer") {
 			let link = "https://etherscan.io/address/" + token;
 			let name = tokenName(token, data["tokens"]);
 
-			label =
-				" " +
-				i +
-				") " +
-				amount +
-				" " +
-				tokenName(token, data["tokens"]);
-
-			g.setEdge(from, to, {
-				labelType: "html",
-				label: " " + i + ") " + amount + " <a href=" + link + ">" + name + "</a>",
-			}, i);
+			g.setEdge(
+				from,
+				to,
+				{
+					labelType: "html",
+					label:
+						" " +
+						count +
+						") " +
+						amount +
+						" <a href=" +
+						link +
+						">" +
+						name +
+						"</a>",
+				},
+				count
+			);
+			count++;
+		} else if (type == "approval") {
+			if (!_approvals){
+				continue;
+			}
+			let link = "https://etherscan.io/address/" + token;
+			let name = tokenName(token, data["tokens"]);
+			g.setEdge(
+				from,
+				to,
+				{
+					labelType: "html",
+					label:
+						" " +
+						count +
+						") approve " +
+						amount +
+						" <a href=" +
+						link +
+						">" +
+						name +
+						"</a>",
+				},
+				count
+			);
+			count++;
 		}
 	}
 
@@ -185,13 +234,10 @@ function drawFigure(data, _valueOnLabels) {
 	});
 
 	var svg = d3.select("svg");
+	svg.selectAll("*").remove();
+	svg.append("g");
 	var inner = svg.select("g");
-
-	// Set up zoom support
-	var zoom = d3.zoom().on("zoom", function () {
-		inner.attr("transform", d3.event.transform);
-	});
-	svg.call(zoom);
+	
 
 	// Create the renderer
 	var render = new dagreD3.render();
@@ -200,7 +246,7 @@ function drawFigure(data, _valueOnLabels) {
 	render(inner, g);
 
 	// Center the graph
-	var initialScale = 0.75;
+/*	var initialScale = 0.75;
 	svg.call(
 		zoom.transform,
 		d3.zoomIdentity
@@ -211,13 +257,39 @@ function drawFigure(data, _valueOnLabels) {
 			.scale(initialScale)
 	);
 
-	let height =
+	let height =g.graph().height * initialScale;
 		g.graph().height * initialScale > screen.height
 			? g.graph().height * initialScale
 			: screen.height;
 	console.log(height, screen.height);
 	//svg.attr('height', g.graph().height * initialScale);
-	svg.attr("height", height);
+	svg.attr("height", height);*/
+
+	// Set up zoom support
+	var zoom = d3.zoom().on("zoom", function () {
+		inner.attr("transform", d3.event.transform);
+	});
+	svg.call(zoom);
+
+	var graphWidth = g.graph().width + 80;
+    var graphHeight = g.graph().height + 40;
+    var width = parseInt(svg.style("width").replace(/px/, ""));
+    var height = parseInt(svg.style("height").replace(/px/, ""));
+    var zoomScale = Math.min(width / graphWidth, height / graphHeight);
+    var translateX = (width / 2) - ((graphWidth * zoomScale) / 2)
+    var translateY = (height / 2) - ((graphHeight * zoomScale) / 2);
+	console.log(translateX, translateY);
+	var svgZoom = svg.transition().duration(500);
+	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(zoomScale));	
+//	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(0, 0).scale(1));
+//	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(zoomScale));	
+}
+
+var lastData;
+
+function pleaseDraw(){
+	let approvals = document.getElementById("approvals").checked;
+	drawFigure(lastData, true, approvals);
 }
 
 getTransfers().then((tx) => {
@@ -234,6 +306,8 @@ getTransfers().then((tx) => {
 
 	getLinks(tx).then((data) => {
 		console.log(data);
-		drawFigure(data, true);
+		lastData = data;
+		pleaseDraw();
+		//drawFigure(data, true, false);
 	});
 });

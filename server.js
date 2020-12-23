@@ -26,7 +26,9 @@ app.get("/transfers/:txhash", (req, res) => {
 			res.status(200).send(transfers);
 		})
 		.catch((err) => {
-			res.status(200).send(err);
+			console.log(err);
+			let pokkers = {desc: "There was an error :(", err: err}
+			res.status(200).send(pokkers);
 		});
 });
 

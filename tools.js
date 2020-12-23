@@ -27,13 +27,51 @@ function getEvent(log) {
 	if (log["topics"][0].toLowerCase() == transferEvent) {
 		return [getTransfer(log)];
 	} else if (log["topics"][0].toLowerCase() == approvalEvent) {
-		//return getApproval(log);
+		return [getApproval(log)];
 	} else if (log["topics"][0].toLowerCase() == depositEvent) {
 		return getDeposits(log);
 	} else if (log["topics"][0].toLowerCase() == withdrawelEvent) {
 		return getWithdrawel(log);
 	}
 	return [];
+}
+
+function getApproval(log) {
+	let tokenAddress = log["address"].toLowerCase();
+
+	let topics = [];
+	for (let i = 1; i < log["topics"].length; i++) {
+		topics.push(log["topics"][i]);
+	}
+
+	let res = web3.eth.abi.decodeLog(
+		[
+			{
+				type: "address",
+				name: "owner",
+				indexed: true,
+			},
+			{
+				type: "address",
+				name: "spender",
+				indexed: true,
+			},
+			{
+				type: "uint256",
+				name: "value",
+			},
+		],
+		log["data"],
+		topics
+	);
+
+	return {
+		type: "approval",
+		from: res["owner"].toLowerCase(),
+		to: res["spender"].toLowerCase(),
+		amount: res["value"],
+		token: tokenAddress,
+	};
 }
 
 function getDeposits(log) {
