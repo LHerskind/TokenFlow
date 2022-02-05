@@ -1,17 +1,31 @@
 const Web3 = require("web3");
 const fetch = require("node-fetch");
 
-var config = require("./config");
+// var config = require("./config");
 
 const erc20abi = require("./public/abis/erc20.json");
+
+//lets us delay execution of a function
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 module.exports.getTransfers = function (txhash) {
 	return getTransfers(txhash);
 };
 
-let etherscanApiKey = config.etherscanApiKey;
-var web3 = new Web3(Web3.givenProvider || config.infuraHost);
-
+// we can ignore these if we wait 300 ms between each call to each unique api
+// let etherscanApiKey = config.etherscanApiKey;
+// let bscscanApiKey = config.bscscanApiKey;
+// let polygonscanApiKey = config.polygonscanApiKey;
+// let snowtraceApiKey = config.snowtraceApiKey;
+// let arbiscanApiKey = config.arbiscanApiKey;
+// let optimisticApiKey = config.optimisticApiKey;
+// let hooScanApiKey = config.hooScanApiKey;
+// let moonscanApiKey = config.moonscanApiKey;
+// let moonRiverApiKey = config.moonRiverApiKey;
+// let FtmScanApiKey = config.FtmScanApiKey;
+// let CronoScanApiKey = config.CronoScanApiKey;
+//set them by default
+var web3 = new Web3(Web3.givenProvider); //|| config.infuraHost
 let ethAddr = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 let wethAddr = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
@@ -285,23 +299,225 @@ async function batchGetCoins(tokensToLookAt) {
 	return tokens;
 }
 
-async function getEthTransfers(txhash) {
-	let url =
-		"https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=";
-	url = url + txhash;
-	url = url + "&apikey=" + etherscanApiKey;
+async function findNetwork(txhash) {
 
+	await delay(300); // we have to delay this call to avoid the API rate limit
+	//console.log("Finding network for txhash: " + txhash);
+
+	//we'll intentionally create side-effects to change wETHAddr and web3 to the correct address and provider
+	//this will allow functionality on every network that blockscan.com supports
+
+	let url, data; //exist
+	// console.log(config.etherscanAPIKey)
+	url = "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=" + txhash;//+ "&apikey=" + config.etherscanApiKey;
 	try {
+		console.log("trying etherscan: " + url);
 		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			web3 = new Web3(new Web3.providers.HttpProvider("https://nodes.mewapi.io/rpc/eth")); //|| config.infuraHost
+			wethAddr = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
+			//console.log("Ethereum");
+			return data;
+		}
 	} catch (err) {
-		console.log(err);
-		return [];
+		//console.log(err);
+		//return [];
 	}
 
-	let data = await response.json();
-	if (data["status"] != "1" || data["message"] != "OK") {
-		return [];
+	url = "https://api.bscscan.com/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying bscscan: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c"; // wrapped BNB
+			web3 = new Web3(new Web3.providers.HttpProvider("https://bsc-dataseed.binance.org/"));
+			//console.log("Binance");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
 	}
+
+	url = "https://api.polygonscan.com/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying polygonscan: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"; // wrapped MATIC
+			web3 = new Web3(new Web3.providers.HttpProvider("https://rpc-mainnet.maticvigil.com"));
+			//console.log("Polygon");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api.ftmscan.com/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying ftmscan: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83"; // wrapped FTM
+			web3 = new Web3(new Web3.providers.HttpProvider("https://rpcapi.fantom.network/"));
+			//console.log("Fantom");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api.hecoinfo.com/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying hecoinfo: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0x5545153ccfca01fbd7dd11c0b23ba694d9509a6f"; // wrapped HT
+			web3 = new Web3(new Web3.providers.HttpProvider("https://http-mainnet.hecochain.com/"));
+			//console.log("Hecoin");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api.hooscan.com/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying hooscan: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0x3EFF9D389D13D6352bfB498BCF616EF9b1BEaC87"; // wrapped HOO
+			web3 = new Web3(new Web3.providers.HttpProvider("https://http-mainnet.hoosmartchain.com/"));
+			//console.log("Hoosmart");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+
+	url = "https://api.snowtrace.com/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying snowtrace: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"; // wrapped AVAX
+			web3 = new Web3(new Web3.providers.HttpProvider("https://api.avax.network/ext/bc/C/rpc"));
+			//console.log("Avax-C Chain");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api-moonbeam.moonscan.io/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying moonbeam: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0xAcc15dC74880C9944775448304B263D191c6077F"; // wrapped GLMR
+			web3 = new Web3(new Web3.providers.HttpProvider("https://rpc.api.moonbeam.network"));
+			//console.log("Moonbeam");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api.cronoscan.com/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying cronoscan: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			wETHAddr = "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23"; //wrapped CRONO
+			web3 = new Web3(new Web3.providers.HttpProvider("https://evm-cronos.crypto.org"))
+			//console.log("Crono");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api-optimistic.etherscan.io/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying optimistic: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			//set wETHAddr to the correct address
+			wETHAddr = "0x4200000000000000000000000000000000000006"; // somehow works as ETH and wrapped ETH?
+			web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.optimism.io"));
+			//console.log("Optimistic");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api-moonriver.moonscan.io/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying moonriver: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			//set wETHAddr to the correct address
+			wETHAddr = "0x98878B06940aE243284CA214f92Bb71a2b032B8A"; //wrapped MOVR
+			web3 = new Web3(new Web3.providers.HttpProvider("https://rpc.moonriver.moonbeam.network"));
+			//console.log("Moonriver");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	url = "https://api.arbiscan.io/api?module=account&action=txlistinternal&txhash=" + txhash;
+	try {
+		console.log("trying arbiscan: " + url);
+		var response = await fetch(url);
+		data = await response.json();
+		if (data["status"] == "1") {
+			//set wETHAddr to the correct address
+			wETHAddr = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; //wrapped ETH
+			web3 = new Web3(new Web3.providers.HttpProvider("https://arb1.arbitrum.io/rpc"));
+			//console.log("Moonriver");
+			return data;
+		}
+	} catch (err) {
+		//console.log(err);
+		//return [];
+	}
+
+	console.log("Unknown chain");
+	//if none of the above work, we'll return an empty array
+	return [];
+
+}
+
+async function getEthTransfers(txhash, data) {
+
+
+	// data = await findNetwork(txhash);
+	// console.log(data);
+	if (data == [])
+		return [];
 
 	let eth_transfers = [];
 
@@ -543,6 +759,9 @@ async function joinERCEthTransfers(_from, _eths, _ercs) {
 }
 
 async function getTransfers(txhash) {
+
+	//findNetwork will create side-effects and change the web3 provider and wETH contract
+	let data = await findNetwork(txhash);
 	try {
 		var initialTransfer = await web3.eth.getTransaction(txhash);
 	} catch (err) {
@@ -599,7 +818,7 @@ async function getTransfers(txhash) {
 	let useEth = true;
 	let res = null;
 	if (useEth) {
-		let eths = await getEthTransfers(txhash);
+		let eths = await getEthTransfers(txhash, data);
 		let transfers = await joinERCEthTransfers(
 			from,
 			eths,
