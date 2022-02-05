@@ -28,6 +28,9 @@ async function getTransfers() {
 		console.log("i am smol");
 		return { err: "Transaction hash length not matching" };
 	}
+	else {
+		console.log("i am big");
+	}
 
 	let _url = "https://" + hostname + "/transfers/" + _txhash;
 	console.log(_url);
@@ -46,13 +49,12 @@ async function getLinks(_data) {
 	let edges = [];
 
 	// Should we add the type of node, such that we can easily remove the ones only used in approvals
-
 	for (let i = 0; i < transfers.length; i++) {
 		let transfer = transfers[i];
 		let transferAmount = transfer["amount"];
-		let coin = transfer["token"].toLowerCase();
-		let from = transfer["from"].toLowerCase();
-		let to = transfer["to"].toLowerCase();
+		let coin = transfer["token"];//.toLowerCase(); // no reason to set them to lower case
+		let from = transfer["from"];//.toLowerCase();
+		let to = transfer["to"];//.toLowerCase();
 		let type = transfer["type"];
 		edges.push({
 			source: from,
@@ -63,8 +65,8 @@ async function getLinks(_data) {
 		});
 
 		[from, to].forEach((addr) => {
-			let temp = {name: addr, type: type};
-			if (nodeLabelMap[addr] == undefined || nodeLabelMap[addr]["type"] == 'approval'){
+			let temp = { name: addr, type: type };
+			if (nodeLabelMap[addr] == undefined || nodeLabelMap[addr]["type"] == 'approval') {
 				nodeLabelMap[addr] = temp;
 			}
 		});
@@ -139,7 +141,10 @@ function tokenName(address, tokens) {
 	return address;
 }
 
-function drawFigure(data, _valueOnLabels, _approvals) {
+async function drawFigure(data, _valueOnLabels, _approvals) {
+
+	//why work harder? just send users to blockscan.com
+	let scanUrl = "https://blockscan.com/search?q=";
 	// TODO: Idea, draw numbers, and then give a list of items on the side.
 	var g = new dagreD3.graphlib.Graph({ multigraph: true }).setGraph({
 		rankdir: "LR",
@@ -147,19 +152,19 @@ function drawFigure(data, _valueOnLabels, _approvals) {
 	console.log("Sender: ", data["sender"]);
 
 	data["nodes"].forEach((node) => {
-		if (!_approvals && node["type"] == 'approval'){
+		if (!_approvals && node["type"] == 'approval') {
 			return;
 		}
 		if (node["name"] == data["sender"]) {
 			//g.setNode(node["name"], { label: "Sender" });
-			let link = "https://etherscan.io/address/" + node["name"];
+			let link = scanUrl + node["name"];
 			let name = "sender";
 			g.setNode(node["name"], {
 				labelType: "html",
 				label: "<a href=" + link + ">" + name + "</a>",
 			});
 		} else {
-			let link = "https://etherscan.io/address/" + node["name"];
+			let link = scanUrl + node["name"];
 			let name = cleanName(node["name"], data["tokens"]);
 			g.setNode(node["name"], {
 				labelType: "html",
@@ -178,7 +183,7 @@ function drawFigure(data, _valueOnLabels, _approvals) {
 		let amount = getValue(edge["amount"], token, data["tokens"]);
 
 		if (type == "transfer" || type == "ethtransfer") {
-			let link = "https://etherscan.io/address/" + token;
+			let link = scanUrl + token;
 			let name = tokenName(token, data["tokens"]);
 
 			g.setEdge(
@@ -201,10 +206,10 @@ function drawFigure(data, _valueOnLabels, _approvals) {
 			);
 			count++;
 		} else if (type == "approval") {
-			if (!_approvals){
+			if (!_approvals) {
 				continue;
 			}
-			let link = "https://etherscan.io/address/" + token;
+			let link = scanUrl + token;
 			let name = tokenName(token, data["tokens"]);
 			g.setEdge(
 				from,
@@ -237,7 +242,7 @@ function drawFigure(data, _valueOnLabels, _approvals) {
 	svg.selectAll("*").remove();
 	svg.append("g");
 	var inner = svg.select("g");
-	
+
 
 	// Create the renderer
 	var render = new dagreD3.render();
@@ -246,24 +251,24 @@ function drawFigure(data, _valueOnLabels, _approvals) {
 	render(inner, g);
 
 	// Center the graph
-/*	var initialScale = 0.75;
-	svg.call(
-		zoom.transform,
-		d3.zoomIdentity
-			.translate(
-				(svg.attr("width") - g.graph().width * initialScale) / 2,
-				20
-			)
-			.scale(initialScale)
-	);
-
-	let height =g.graph().height * initialScale;
-		g.graph().height * initialScale > screen.height
-			? g.graph().height * initialScale
-			: screen.height;
-	console.log(height, screen.height);
-	//svg.attr('height', g.graph().height * initialScale);
-	svg.attr("height", height);*/
+	/*	var initialScale = 0.75;
+		svg.call(
+			zoom.transform,
+			d3.zoomIdentity
+				.translate(
+					(svg.attr("width") - g.graph().width * initialScale) / 2,
+					20
+				)
+				.scale(initialScale)
+		);
+	
+		let height =g.graph().height * initialScale;
+			g.graph().height * initialScale > screen.height
+				? g.graph().height * initialScale
+				: screen.height;
+		console.log(height, screen.height);
+		//svg.attr('height', g.graph().height * initialScale);
+		svg.attr("height", height);*/
 
 	// Set up zoom support
 	var zoom = d3.zoom().on("zoom", function () {
@@ -272,22 +277,22 @@ function drawFigure(data, _valueOnLabels, _approvals) {
 	svg.call(zoom);
 
 	var graphWidth = g.graph().width + 80;
-    var graphHeight = g.graph().height + 40;
-    var width = parseInt(svg.style("width").replace(/px/, ""));
-    var height = parseInt(svg.style("height").replace(/px/, ""));
-    var zoomScale = Math.min(width / graphWidth, height / graphHeight);
-    var translateX = (width / 2) - ((graphWidth * zoomScale) / 2)
-    var translateY = (height / 2) - ((graphHeight * zoomScale) / 2);
+	var graphHeight = g.graph().height + 40;
+	var width = parseInt(svg.style("width").replace(/px/, ""));
+	var height = parseInt(svg.style("height").replace(/px/, ""));
+	var zoomScale = Math.min(width / graphWidth, height / graphHeight);
+	var translateX = (width / 2) - ((graphWidth * zoomScale) / 2)
+	var translateY = (height / 2) - ((graphHeight * zoomScale) / 2);
 	console.log(translateX, translateY);
 	var svgZoom = svg.transition().duration(500);
-	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(zoomScale));	
-//	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(0, 0).scale(1));
-//	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(zoomScale));	
+	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(zoomScale));
+	//	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(0, 0).scale(1));
+	//	svgZoom.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(zoomScale));	
 }
 
 var lastData;
 
-function pleaseDraw(){
+function pleaseDraw() {
 	let approvals = document.getElementById("approvals").checked;
 	drawFigure(lastData, true, approvals);
 }
